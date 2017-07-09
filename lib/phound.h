@@ -12,13 +12,8 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 
-//#ifndef TYPES
 #include "types.h"
-//#endif
-
-//#ifndef LINKED_LIST
 #include "linked_list.h"
-//#endif
 
 
 #define ETH_HEADER_SIZE sizeof(struct ether_header)
@@ -32,7 +27,7 @@ static u_char *packet;
 
 
 //static void got_packet(u_char *, const struct pcap_pkthdr *, const u_char *);
-int init(char *[], int, int);
+int init(int, int, char *[]);
 
 
 void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
@@ -57,14 +52,13 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 	
 }
 
-int init(char * devices[], int mode, int timeout)
+int init(int mode, int timeout, char * filters[])
 {
-	
-	if(devices == NULL){
-		printf("No device name found\n");
+	if(filters == NULL){
+		printf("Filters are null\n");
 		return -1;
 	}
-
+	
 	if(mode < 0){
 		printf("No mode established\n");
 		return -1;
@@ -76,15 +70,24 @@ int init(char * devices[], int mode, int timeout)
 	}
 
 	int i = 0;
-	int length = sizeof *devices / sizeof(char *);
+	int length = sizeof *filters / sizeof(char *);
+	int hasFilters = 0
+	/* No filters established, set to 1*/
+	if(length == 0){
+		length = 1;
+		hasFilters = 1;
+	}
+
 	/*printf("length: %d\n", length);*/
-	char *device_name;
+	char *device_name = "eth0";
 	bpf_u_int32 mask = 0;
 	bpf_u_int32 net = 0;
 	Device dev;
+
+	struct bpf_program fp; /*The compiled filter expression*/
 	
 	for(i; i < length; i++){
-		device_name = devices[i];
+
 		if(device_name == NULL){
 			fprintf(stderr, "Couldn't find default device: %s\n", errbuf);
 			return -1;
@@ -92,7 +95,7 @@ int init(char * devices[], int mode, int timeout)
 		else{
 
 			if(pcap_lookupnet(device_name, &net, &mask, errbuf) == -1){
-				fprintf(stderr, "Couldn't get netmask for device %s: %s\n", dev, errbuf);
+				fprintf(stderr, "Couldn't get netmask for device %s: %s\n", device_name, errbuf);
 				return -1;
 
 			}
@@ -102,8 +105,6 @@ int init(char * devices[], int mode, int timeout)
 				temp = init_node(temp);
 				temp->handle = pcap_open_live(dev.device_name, BUFSIZ, mode, timeout, errbuf);
 				temp->device = &dev;
-	
-				temp->handle = pcap_open_live(temp->device->device_name, BUFSIZ, mode, timeout, errbuf);
 
 				if(temp->handle == NULL){
 					fprintf(stderr, "Couldn't open device %s\n", errbuf);
@@ -111,7 +112,25 @@ int init(char * devices[], int mode, int timeout)
 				}
 				else{
 					
-					pcap_loop(temp->handle, -1, got_packet, NULL);
+					if(hasFilters){
+						if(pcap_compile(temp->handle, &fp, filters[i], 0, net) == -1){
+							fprintf(stderr, "Couldn't parse filter %s: %s\n", filters[i], pcap_geterr(temp->handle));
+							return -1;
+						}
+
+						/*set filter after compilation*/
+						if(pcap_setfilter(temp->handle, &fp) == -1){
+							fprintf(stderr, "Couldn't install filter %s: %s\n", filters[i], pcap_geterr(temp->handle);
+							return -1;
+						}	
+					}
+
+
+					if(pcap_setnonblock(temp->handle, 1, errbuf) == -1){
+						fprintf(stderr, "Couldn't set the device to non blocking: %s\n", errbuf);
+						return -1;
+					}
+					
 					add_node(temp);
 					return 0;
 				}
