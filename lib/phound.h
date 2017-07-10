@@ -71,7 +71,7 @@ int init(int mode, int timeout, char * filters[])
 
 	int i = 0;
 	int length = sizeof *filters / sizeof(char *);
-	int hasFilters = 0
+	int hasFilters = 0;
 	/* No filters established, set to 1*/
 	if(length == 0){
 		length = 1;
@@ -79,7 +79,7 @@ int init(int mode, int timeout, char * filters[])
 	}
 
 	/*printf("length: %d\n", length);*/
-	char *device_name = "eth0";
+	char *device_name = "wlan0";
 	bpf_u_int32 mask = 0;
 	bpf_u_int32 net = 0;
 	Device dev;
@@ -120,7 +120,7 @@ int init(int mode, int timeout, char * filters[])
 
 						/*set filter after compilation*/
 						if(pcap_setfilter(temp->handle, &fp) == -1){
-							fprintf(stderr, "Couldn't install filter %s: %s\n", filters[i], pcap_geterr(temp->handle);
+							fprintf(stderr, "Couldn't install filter %s: %s\n", filters[i], pcap_geterr(temp->handle));
 							return -1;
 						}	
 					}

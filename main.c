@@ -2,8 +2,8 @@
 
 int main(int argc, char *argv[]){
 
-	char * devices[] = {"wlan0"};
-	int success = init(devices, 1, 1);
+	char * filters[] = {};
+	int success = init(1, 1, filters);
 	if(success == 0){
 		printf("Success!: %d\n", success);
 	}
