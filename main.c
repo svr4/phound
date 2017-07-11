@@ -3,7 +3,7 @@
 int main(int argc, char *argv[]){
 
 	char * filters[] = {};
-	int success = init(1, 1, filters);
+	int success = init(PROMISC, TIMEOUT, filters);
 	if(success == 0){
 		printf("Success!: %d\n", success);
 	}
