@@ -11,6 +11,7 @@
 #include <netinet/if_ether.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
+#include <string.h>
 
 #include "types.h"
 #include "linked_list.h"
@@ -79,10 +80,10 @@ int init(int mode, int timeout, char * filters[])
 	}
 
 	/*printf("length: %d\n", length);*/
-	char *device_name = "wlan0";
+	char *device_name = ETHERNET;
 	bpf_u_int32 mask = 0;
 	bpf_u_int32 net = 0;
-	Device dev;
+	Device * dev;
 
 	struct bpf_program fp; /*The compiled filter expression*/
 	
@@ -103,8 +104,8 @@ int init(int mode, int timeout, char * filters[])
 				dev = make_device(device_name, mask, net);
 				Node *temp;
 				temp = init_node(temp);
-				temp->handle = pcap_open_live(dev.device_name, BUFSIZ, mode, timeout, errbuf);
-				temp->device = &dev;
+				temp->handle = pcap_open_live(dev->device_name, BUFSIZ, mode, timeout, errbuf);
+				temp->device = dev;
 
 				if(temp->handle == NULL){
 					fprintf(stderr, "Couldn't open device %s\n", errbuf);

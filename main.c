@@ -11,5 +11,13 @@ int main(int argc, char *argv[]){
 		printf("Failed!: %d\n", success);
 	}
 
+	Node * n = find_device(ETHERNET);
+
+	if(n == NULL)
+		printf("Shits null \n");
+	else
+		printf("Found it!\n");
+
+
 	return 0;
 }
