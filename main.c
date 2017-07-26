@@ -18,6 +18,10 @@ int main(int argc, char *argv[]){
 	else
 		printf("Found it!\n");
 
+	
+	pthread_t t = readFromDevice(n);
+	sleep(2);
+	pthread_cancel(t);
 
 	return 0;
 }

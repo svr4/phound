@@ -13,6 +13,7 @@ Device * get_device(Node *);
 int add_node(Node *);
 int size();
 Node * find_device(char *);
+/*End function prototypes*/
 
 Node * init_node(Node *node){
 	

@@ -12,6 +12,7 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <string.h>
+#include <pthread.h>
 
 #include "types.h"
 #include "linked_list.h"
@@ -25,10 +26,15 @@ static pcap_t *handle;
 static char errbuf[PCAP_ERRBUF_SIZE];
 static struct pcap_pkthdr header;
 static u_char *packet;
+static char * screen_buffer[10];
+static int screen_count = 0;
 
-
-//static void got_packet(u_char *, const struct pcap_pkthdr *, const u_char *);
+/*Function Prototypes*/
+void got_packet(u_char *, const struct pcap_pkthdr *, const u_char *);
 int init(int, int, char *[]);
+pthread_t readFromDevice(Node *);
+static void *readOnThread(void *);
+/******/
 
 
 void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
@@ -47,14 +53,41 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 	destination = ip_pointer->ip_dst;
 	source = ip_pointer->ip_src;
 
-	printf("Destination: %s:%u \n", inet_ntoa(destination), ntohs(tcp_pointer->th_dport));
+	/*printf("Destination: %s:%u \n", inet_ntoa(destination), ntohs(tcp_pointer->th_dport));
 	printf("Source: %s:%u \n", inet_ntoa(source), ntohs(tcp_pointer->th_sport));
-	printf("Payload: %s\n\n", payload);
-	
+	printf("Payload: %s\n\n", payload);*/
+
+	screen_buffer[screen_count] = strdup("deez");
+	screen_count++;
+}
+
+pthread_t readFromDevice(Node * node)
+{
+	pthread_t thread;
+	if(pthread_create(&thread, NULL, readOnThread, (void *)node) != 0)
+		printf("Error creating reading thread...\n");
+	return thread;
+}
+
+/*Reading Thread*/
+static void *readOnThread(void * n)
+{	
+	Node *node = (Node*) n;
+	while(screen_count < 10){
+		if(pcap_dispatch(node->handle, 1, got_packet, NULL) < 0){
+			printf("Error on reading from node..\n");
+		}
+	}
+	int i = 0;
+	for(i; i < 10; i++)
+		printf("Payload: %s\n", screen_buffer[i]);
+	free(*screen_buffer);
 }
 
 int init(int mode, int timeout, char * filters[])
 {
+	*screen_buffer = (char*) malloc(10 * sizeof(int));
+
 	if(filters == NULL){
 		printf("Filters are null\n");
 		return -1;
@@ -138,7 +171,6 @@ int init(int mode, int timeout, char * filters[])
 			}
 		}
 	}
-
 
 }
 #endif
