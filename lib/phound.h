@@ -44,7 +44,7 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 	struct in_addr source, destination;
 	struct tcphdr *tcp_pointer;
 	u_char *payload;
-	
+
 	//printf("Size of device list: %d\n",size()); /*print the size of the list*/
 	ethernet_pointer = (struct ether_header *) packet;
 	ip_pointer = (struct ip *) (packet + ETH_HEADER_SIZE);
@@ -71,7 +71,7 @@ pthread_t readFromDevice(Node * node)
 
 /*Reading Thread*/
 static void *readOnThread(void * n)
-{	
+{
 	Node *node = (Node*) n;
 	while(screen_count < 10){
 		if(pcap_dispatch(node->handle, 1, got_packet, NULL) < 0){
@@ -79,20 +79,22 @@ static void *readOnThread(void * n)
 		}
 	}
 	int i = 0;
+	/* TODO: Receive struct with packet details to print on screen */
 	for(i; i < 10; i++)
 		printf("Payload: %s\n", screen_buffer[i]);
 	free(*screen_buffer);
 }
-
+/* Initialize the sniffer on Ethernet */
 int init(int mode, int timeout, char * filters[])
 {
-	*screen_buffer = (char*) malloc(10 * sizeof(int));
+	//*screen_buffer = (char*) malloc(10 * sizeof(int));
+	*screen_buffer = (char*) malloc(10);
 
 	if(filters == NULL){
 		printf("Filters are null\n");
 		return -1;
 	}
-	
+
 	if(mode < 0){
 		printf("No mode established\n");
 		return -1;
@@ -119,7 +121,7 @@ int init(int mode, int timeout, char * filters[])
 	Device * dev;
 
 	struct bpf_program fp; /*The compiled filter expression*/
-	
+
 	for(i; i < length; i++){
 
 		if(device_name == NULL){
@@ -145,7 +147,7 @@ int init(int mode, int timeout, char * filters[])
 					return -1;
 				}
 				else{
-					
+
 					if(hasFilters){
 						if(pcap_compile(temp->handle, &fp, filters[i], 0, net) == -1){
 							fprintf(stderr, "Couldn't parse filter %s: %s\n", filters[i], pcap_geterr(temp->handle));
@@ -156,7 +158,7 @@ int init(int mode, int timeout, char * filters[])
 						if(pcap_setfilter(temp->handle, &fp) == -1){
 							fprintf(stderr, "Couldn't install filter %s: %s\n", filters[i], pcap_geterr(temp->handle));
 							return -1;
-						}	
+						}
 					}
 
 
@@ -164,7 +166,7 @@ int init(int mode, int timeout, char * filters[])
 						fprintf(stderr, "Couldn't set the device to non blocking: %s\n", errbuf);
 						return -1;
 					}
-					
+
 					add_node(temp);
 					return 0;
 				}
