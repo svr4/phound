@@ -2,26 +2,27 @@
 
 int main(int argc, char *argv[]){
 
-	char * filters[] = {};
-	int success = init(PROMISC, TIMEOUT, filters);
-	if(success == 0){
+	/* Get some default options */
+	PhoundOptions * opts = set_default_opts();
+	int success = init(opts);
+	/*if(success == 0){
 		printf("Success!: %d\n", success);
 	}
 	else{
 		printf("Failed!: %d\n", success);
-	}
+	}*/
 	// Finds the initialized device that's in the list when I call init()
 	Node * n = find_device(ETHERNET);
 
-	if(n == NULL)
+	/*if(n == NULL)
 		printf("Shits null \n");
 	else
-		printf("Found it!\n");
+		printf("Found it!\n");*/
 
 
 	pthread_t t = readFromDevice(n);
-	sleep(2);
-	pthread_cancel(t);
+
+	while(1);
 
 	return 0;
 }

@@ -26,12 +26,12 @@ static pcap_t *handle;
 static char errbuf[PCAP_ERRBUF_SIZE];
 static struct pcap_pkthdr header;
 static u_char *packet;
-static char * screen_buffer[10];
-static int screen_count = 0;
+//static ScreenPacket * screen_buffer[10];
+//static int screen_count = 0;
 
 /*Function Prototypes*/
 void got_packet(u_char *, const struct pcap_pkthdr *, const u_char *);
-int init(int, int, char *[]);
+int init(PhoundOptions *);
 pthread_t readFromDevice(Node *);
 static void *readOnThread(void *);
 /******/
@@ -39,11 +39,11 @@ static void *readOnThread(void *);
 
 void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
 {
-	struct ether_header *ethernet_pointer;
-	struct ip *ip_pointer;
+	struct ether_header *ethernet_pointer = (struct ether_header *) malloc(sizeof(struct ether_header));
+	struct ip *ip_pointer = (struct ip *) malloc(sizeof(struct ip));
 	struct in_addr source, destination;
-	struct tcphdr *tcp_pointer;
-	u_char *payload;
+	struct tcphdr *tcp_pointer = (struct tcphdr *) malloc(sizeof(struct tcphdr));
+	u_char *payload = (u_char *) malloc(sizeof(u_char));
 
 	//printf("Size of device list: %d\n",size()); /*print the size of the list*/
 	ethernet_pointer = (struct ether_header *) packet;
@@ -57,8 +57,23 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 	printf("Source: %s:%u \n", inet_ntoa(source), ntohs(tcp_pointer->th_sport));
 	printf("Payload: %s\n\n", payload);*/
 
-	screen_buffer[screen_count] = strdup("deez");
-	screen_count++;
+	printf("%s:%u %s:%u %s\n", inet_ntoa(destination), ntohs(tcp_pointer->th_dport), inet_ntoa(source), ntohs(tcp_pointer->th_sport), payload);
+
+	/*ScreenPacket * pkt = malloc(sizeof(ScreenPacket));
+	pkt->destination = inet_ntoa(destination);
+	pkt->d_port = ntohs(tcp_pointer->th_dport);
+	pkt->source = inet_ntoa(source);
+	pkt->s_port = ntohs(tcp_pointer->th_sport);
+	pkt->payload = strdup(payload);*/
+
+	/*if(screen_count < 10){
+		screen_buffer[screen_count] = pkt;
+		screen_count++;
+	}
+	else{
+		screen_count = 0;
+	}*/
+
 }
 
 pthread_t readFromDevice(Node * node)
@@ -73,22 +88,34 @@ pthread_t readFromDevice(Node * node)
 static void *readOnThread(void * n)
 {
 	Node *node = (Node*) n;
-	while(screen_count < 10){
+	// screen_count < 10
+	while(1){
 		if(pcap_dispatch(node->handle, 1, got_packet, NULL) < 0){
 			printf("Error on reading from node..\n");
 		}
 	}
-	int i = 0;
+
+	//int i = 0;
 	/* TODO: Receive struct with packet details to print on screen */
-	for(i; i < 10; i++)
-		printf("Payload: %s\n", screen_buffer[i]);
-	free(*screen_buffer);
+	/*for(i; i < screen_count; i++){
+		if(screen_buffer[i] != NULL){
+			ScreenPacket *pkt = (ScreenPacket*)screen_buffer[i];
+			printf("%s:%u %s:%u %s\n", pkt->destination, pkt->d_port, pkt->source, pkt->s_port, pkt->payload);
+			pkt = NULL;
+		}
+	}*/
 }
 /* Initialize the sniffer on Ethernet */
-int init(int mode, int timeout, char * filters[])
+int init(PhoundOptions * opts)
 {
 	//*screen_buffer = (char*) malloc(10 * sizeof(int));
-	*screen_buffer = (char*) malloc(10);
+	//*screen_buffer = (ScreenPacket*) malloc(10 * sizeof(int));
+
+	/* Get the options */
+	int put_wlan_in_monitor = opts->put_wlan_in_monitor;
+	int mode = opts->mode;
+	int timeout = opts->timeout;
+	char * filters[] = opts->filters;
 
 	if(filters == NULL){
 		printf("Filters are null\n");
@@ -114,8 +141,8 @@ int init(int mode, int timeout, char * filters[])
 		hasFilters = 1;
 	}
 
-	/*printf("length: %d\n", length);*/
-	char *device_name = ETHERNET;
+	/* Automatically looks up for your device */
+	char *device_name = pcap_lookupdev(errbuf);
 	bpf_u_int32 mask = 0;
 	bpf_u_int32 net = 0;
 	Device * dev;
@@ -147,6 +174,22 @@ int init(int mode, int timeout, char * filters[])
 					return -1;
 				}
 				else{
+
+					/* Try to set to monitor if device is wlan */
+					// TODO: Actually set handle to monitor mode;
+					if(put_wlan_in_monitor && (strstr(device_name, "wlan") != NULL)){
+						int can_set_to_monitor = pcap_can_set_rfmon(temp->handle);
+						if(can_set_to_monitor == 1){
+							printf("Can set to monitor\n");
+						}
+						else if(can_set_to_monitor == 0){
+							printf("Cannot set to monitor\n");
+						}
+						else{
+							fprintf(stderr, "Couldn't set to monitor mode: %s\n", pcap_geterr(temp->handle));
+							return -1;
+						}
+					}
 
 					if(hasFilters){
 						if(pcap_compile(temp->handle, &fp, filters[i], 0, net) == -1){
