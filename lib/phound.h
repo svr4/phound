@@ -88,7 +88,7 @@ pthread_t readFromDevice(Node * node)
 static void *readOnThread(void * n)
 {
 	Node *node = (Node*) n;
-	// screen_count < 10
+
 	while(1){
 		if(pcap_dispatch(node->handle, 1, got_packet, NULL) < 0){
 			printf("Error on reading from node..\n");
@@ -115,7 +115,7 @@ int init(PhoundOptions * opts)
 	int put_wlan_in_monitor = opts->put_wlan_in_monitor;
 	int mode = opts->mode;
 	int timeout = opts->timeout;
-	char * filters[] = opts->filters;
+	char * filters = opts->filters;
 
 	if(filters == NULL){
 		printf("Filters are null\n");
@@ -136,8 +136,7 @@ int init(PhoundOptions * opts)
 	int length = sizeof *filters / sizeof(char *);
 	int hasFilters = 0;
 	/* No filters established, set to 1*/
-	if(length == 0){
-		length = 1;
+	if(length > 0){
 		hasFilters = 1;
 	}
 
@@ -149,70 +148,67 @@ int init(PhoundOptions * opts)
 
 	struct bpf_program fp; /*The compiled filter expression*/
 
-	for(i; i < length; i++){
+	if(device_name == NULL){
+		fprintf(stderr, "Couldn't find default device: %s\n", errbuf);
+		return -1;
+	}
+	else{
 
-		if(device_name == NULL){
-			fprintf(stderr, "Couldn't find default device: %s\n", errbuf);
+		if(pcap_lookupnet(device_name, &net, &mask, errbuf) == -1){
+			fprintf(stderr, "Couldn't get netmask for device %s: %s\n", device_name, errbuf);
 			return -1;
 		}
 		else{
+			printf("%s\n", device_name);
+			dev = make_device(device_name, mask, net);
+			Node *temp;
+			temp = init_node(temp);
+			temp->handle = pcap_open_live(dev->device_name, BUFSIZ, mode, timeout, errbuf);
+			temp->device = dev;
 
-			if(pcap_lookupnet(device_name, &net, &mask, errbuf) == -1){
-				fprintf(stderr, "Couldn't get netmask for device %s: %s\n", device_name, errbuf);
+			if(temp->handle == NULL){
+				fprintf(stderr, "Couldn't open device %s\n", errbuf);
 				return -1;
-
 			}
 			else{
-				dev = make_device(device_name, mask, net);
-				Node *temp;
-				temp = init_node(temp);
-				temp->handle = pcap_open_live(dev->device_name, BUFSIZ, mode, timeout, errbuf);
-				temp->device = dev;
+				/* Try to set to monitor if device is wlan */
+				// TODO: Actually set handle to monitor mode;
 
-				if(temp->handle == NULL){
-					fprintf(stderr, "Couldn't open device %s\n", errbuf);
-					return -1;
-				}
-				else{
-
-					/* Try to set to monitor if device is wlan */
-					// TODO: Actually set handle to monitor mode;
-					if(put_wlan_in_monitor && (strstr(device_name, "wlan") != NULL)){
-						int can_set_to_monitor = pcap_can_set_rfmon(temp->handle);
-						if(can_set_to_monitor == 1){
-							printf("Can set to monitor\n");
-						}
-						else if(can_set_to_monitor == 0){
-							printf("Cannot set to monitor\n");
-						}
-						else{
-							fprintf(stderr, "Couldn't set to monitor mode: %s\n", pcap_geterr(temp->handle));
-							return -1;
-						}
+				if(put_wlan_in_monitor && (strstr(device_name, "wlan") != NULL)){
+					int can_set_to_monitor = pcap_can_set_rfmon(temp->handle);
+					if(can_set_to_monitor == 1){
+						printf("Can set to monitor\n");
 					}
-
-					if(hasFilters){
-						if(pcap_compile(temp->handle, &fp, filters[i], 0, net) == -1){
-							fprintf(stderr, "Couldn't parse filter %s: %s\n", filters[i], pcap_geterr(temp->handle));
-							return -1;
-						}
-
-						/*set filter after compilation*/
-						if(pcap_setfilter(temp->handle, &fp) == -1){
-							fprintf(stderr, "Couldn't install filter %s: %s\n", filters[i], pcap_geterr(temp->handle));
-							return -1;
-						}
+					else if(can_set_to_monitor == 0){
+						printf("Cannot set to monitor\n");
 					}
-
-
-					if(pcap_setnonblock(temp->handle, 1, errbuf) == -1){
-						fprintf(stderr, "Couldn't set the device to non blocking: %s\n", errbuf);
+					else{
+						fprintf(stderr, "Couldn't set to monitor mode: %s\n", pcap_geterr(temp->handle));
 						return -1;
 					}
-
-					add_node(temp);
-					return 0;
 				}
+
+				if(hasFilters){
+					/* For each filter */
+					for(i; i < length; i++){
+						if(pcap_compile(temp->handle, &fp, (filters + i), 0, net) == -1){
+							fprintf(stderr, "Couldn't parse filter %s: %s\n", (filters + i), pcap_geterr(temp->handle));
+							return -1;
+						}
+						/*set filter after compilation*/
+						if(pcap_setfilter(temp->handle, &fp) == -1){
+							fprintf(stderr, "Couldn't install filter %s: %s\n", (filters + i), pcap_geterr(temp->handle));
+							return -1;
+						}
+					}
+				}
+
+				if(pcap_setnonblock(temp->handle, 1, errbuf) == -1){
+					fprintf(stderr, "Couldn't set the device to non blocking: %s\n", errbuf);
+					return -1;
+				}
+				add_node(temp);
+				return 0;
 			}
 		}
 	}

@@ -30,13 +30,13 @@ typedef struct phound_options {
   int put_wlan_in_monitor;
   int mode;
   int timeout;
-  char * filters[MAX_FILTERS];
+  char * filters;
 } PhoundOptions;
 
 /*Function Prototypes*/
 Device * make_device(char *, bpf_u_int32, bpf_u_int32);
 PhoundOptions * set_default_opts();
-PhoundOptions * set_opts(int, int, int, char *[]);
+PhoundOptions * set_opts(int, int, int, char *);
 
 Device * make_device(char * name, bpf_u_int32 mask, bpf_u_int32 net){
 	Device * d = (Device *) malloc(sizeof(Device));
@@ -47,11 +47,11 @@ Device * make_device(char * name, bpf_u_int32 mask, bpf_u_int32 net){
 }
 /* Some default options */
 PhoundOptions * set_default_opts(){
-  char * filters[MAX_FILTERS];
+  char * filters = (char *)malloc(sizeof(char) * MAX_FILTERS);
   return set_opts(1, PROMISC, TIMEOUT, filters);
 }
 /* Some custom options */
-PhoundOptions * set_opts(int put_wlan_in_monitor, int mode, int timeout, char *filters[]){
+PhoundOptions * set_opts(int put_wlan_in_monitor, int mode, int timeout, char *filters){
   PhoundOptions * opts = (PhoundOptions *) malloc(sizeof(PhoundOptions));
   opts->mode = mode;
   opts->put_wlan_in_monitor = put_wlan_in_monitor;

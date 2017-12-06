@@ -14,10 +14,10 @@ int main(int argc, char *argv[]){
 	// Finds the initialized device that's in the list when I call init()
 	Node * n = find_device(ETHERNET);
 
-	/*if(n == NULL)
+	if(n == NULL)
 		printf("Shits null \n");
 	else
-		printf("Found it!\n");*/
+		printf("Found it!\n");
 
 
 	pthread_t t = readFromDevice(n);
