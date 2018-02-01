@@ -42,7 +42,6 @@ int add_node(Node * node){
 		traveler->next = node;
 		node->next = NULL;
 		node->previous = traveler;
-		free(traveler);
 		return 0;
 	}
 
