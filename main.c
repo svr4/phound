@@ -1,4 +1,4 @@
-#include "lib/phound.h"
+#include "lib/headers/phound.h"
 
 int main(int argc, char *argv[]){
 
@@ -12,7 +12,7 @@ int main(int argc, char *argv[]){
 		printf("Failed!: %d\n", success);
 	}*/
 	// Finds the initialized device that's in the list when I call init()
-	Node * n = find_device(ETHERNET);
+	Node * n = find_device("enp3s0");
 
 	if(n == NULL)
 		printf("Shits null \n");

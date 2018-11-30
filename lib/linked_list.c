@@ -1,23 +1,9 @@
-#ifndef LINKED_LIST
-#define LINKED_LIST
+#include "headers/linked_list.h"
 
-#ifndef TYPES
-#include "types.h"
-#endif
-
-static Node *head;
-
-/*Function Prototypes*/
-Node * init_node(Node *);
-Device * get_device(Node *);
-int add_node(Node *);
-int size();
-Node * find_device(char *);
-/*End function prototypes*/
 
 Node * init_node(Node *node){
 	
-	node = malloc(sizeof(Node));
+	node = (Node *)malloc(sizeof(Node));
 	return node;
 }
 
@@ -71,6 +57,3 @@ Node * find_device(char * device_name){
 	return NULL;
 
 }
-
-
-#endif
