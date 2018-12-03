@@ -12,7 +12,8 @@ int main(int argc, char *argv[]){
 		printf("Failed!: %d\n", success);
 	}*/
 	// Finds the initialized device that's in the list when I call init()
-	Node * n = find_device("enp3s0");
+	// enp3s0
+	Node * n = find_device("en0");
 
 	if(n == NULL)
 		printf("Shits null \n");

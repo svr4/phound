@@ -4,8 +4,6 @@
 #ifndef PHOUND
 #include <pcap.h>
 #endif
-#include <stdio.h>
-#include <stdlib.h>
 
 #define ETHERNET "eth0"
 #define WIRELESS "wlan0"
