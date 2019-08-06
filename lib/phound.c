@@ -20,7 +20,37 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 	printf("Source: %s:%u \n", inet_ntoa(source), ntohs(tcp_pointer->th_sport));
 	printf("Payload: %s\n\n", payload);*/
 
-	printf("%s:%u %s:%u %s\n", inet_ntoa(destination), ntohs(tcp_pointer->th_dport), inet_ntoa(source), ntohs(tcp_pointer->th_sport), payload);
+	struct tm * timeinfo = (struct tm *) malloc(sizeof(struct tm));
+	char *timestamp = (char *) malloc(sizeof(char) * 26);
+	ctime_r(&header->ts.tv_sec, timestamp);
+
+	printf("Sequence: %u Ack: %u Window: %u IP id: %u Timestamp: %s\n", tcp_pointer->th_seq, tcp_pointer->th_ack, tcp_pointer->th_win,
+	ip_pointer->ip_id, timestamp);
+	// if (tcp_pointer->th_flags & TH_FIN){
+    //     printf("\tFlag: TH_FIN\n");
+    // }
+    // if (tcp_pointer->th_flags & TH_SYN){
+    //     printf("\tFlag: TH_SYN\n");
+	// }
+	// if (tcp_pointer->th_flags & TH_RST){
+    //     printf("\tFlag: TH_RST\n");
+	// }
+	// if (tcp_pointer->th_flags & TH_PUSH){
+    //     printf("\tFlag: TH_PUSH\n");
+	// }
+	// if (tcp_pointer->th_flags & TH_ACK){
+    //     printf("\tFlag: TH_ACK\n");
+	// }
+	// if (tcp_pointer->th_flags & TH_URG){
+    //     printf("\tFlag: TH_URG\n");
+	// }
+	// if (tcp_pointer->th_flags & TH_ECE){
+    //     printf("\tFlag: TH_ECE\n");
+	// }
+	// if (tcp_pointer->th_flags & TH_CWR){
+    //     printf("\tFlag: TH_CWR\n");
+	// }
+	//printf("%s:%u %s:%u %s\n", inet_ntoa(destination), ntohs(tcp_pointer->th_dport), inet_ntoa(source), ntohs(tcp_pointer->th_sport), payload);
 
 	/*ScreenPacket * pkt = malloc(sizeof(ScreenPacket));
 	pkt->destination = inet_ntoa(destination);
@@ -45,6 +75,11 @@ pthread_t readFromDevice(Node * node)
 	if(pthread_create(&thread, NULL, readOnThread, (void *)node) != 0)
 		printf("Error creating reading thread...\n");
 	return thread;
+}
+
+Node * find_device(char * name)
+{
+	return dlist_find_device(name);
 }
 
 /*Reading Thread*/
@@ -125,9 +160,10 @@ int init(PhoundOptions * opts)
 			printf("Device: %s\n", device_name);
 			dev = make_device(device_name, mask, net);
 			Node *temp;
-			temp = init_node(temp);
+			temp = (Node*)init_node(temp);
 			temp->handle = pcap_open_live(dev->device_name, BUFSIZ, mode, timeout, errbuf);
 			temp->device = dev;
+			pcap_set_tstamp_type(temp->handle, PCAP_TSTAMP_ADAPTER);
 
 			if(temp->handle == NULL){
 				fprintf(stderr, "Couldn't open device %s\n", errbuf);

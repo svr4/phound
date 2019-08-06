@@ -1,17 +1,16 @@
-#include "headers/linked_list.h"
+#include "headers/device_list.h"
 
-
-Node * init_node(Node *node){
+void * init_node(void *node){
 	
 	node = (Node *)malloc(sizeof(Node));
-	return node;
+	return (void *)node;
 }
 
 Device * get_device(Node *node){
 	return node->device;
 }
 
-int add_node(Node * node){
+int add_node(void * node){
 
 	if(head == NULL){
 		head = node;
@@ -26,8 +25,8 @@ int add_node(Node * node){
 		}
 		/*when the loop ends I'l be at the end of the list*/
 		traveler->next = node;
-		node->next = NULL;
-		node->previous = traveler;
+		((Node*)node)->next = NULL;
+		((Node*)node)->previous = traveler;
 		return 0;
 	}
 
@@ -35,7 +34,7 @@ int add_node(Node * node){
 
 int size(){
 	int count = 0;
-	Node * traveler = head;
+	Node * traveler = (Node*)head;
 	while(traveler != NULL){
 		count++;
 		traveler = traveler->next;
@@ -43,9 +42,9 @@ int size(){
 	return count;
 }
 
-Node * find_device(char * device_name){
+Node * dlist_find_device(char * device_name){
 	
-	Node * traveler = head;
+	Node * traveler = (Node*)head;
 	
 	while(traveler != NULL){
 		if(strcmp(traveler->device->device_name, device_name) == 0)

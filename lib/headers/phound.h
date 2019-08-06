@@ -13,9 +13,13 @@
 #include <netinet/tcp.h>
 #include <string.h>
 #include <pthread.h>
+#include <time.h>
 
 #include "types.h"
 #include "linked_list.h"
+#include "device_list.h"
+#include "device.h"
+#include "phound_options.h"
 
 
 #define ETH_HEADER_SIZE sizeof(struct ether_header)
@@ -33,6 +37,7 @@ static u_char *packet;
 void got_packet(u_char *, const struct pcap_pkthdr *, const u_char *);
 int init(PhoundOptions *);
 pthread_t readFromDevice(Node *);
+Node * find_device(char *);
 static void *readOnThread(void *);
 /******/
 

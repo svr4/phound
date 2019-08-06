@@ -1,12 +1,5 @@
-#include "headers/types.h"
+#include "headers/phound_options.h"
 
-Device * make_device(char * name, bpf_u_int32 mask, bpf_u_int32 net){
-	Device * d = (Device *) malloc(sizeof(Device));
-	d->device_name = name;
-	d->mask = mask;
-	d->net = net;
-	return d;
-}
 /* Some default options */
 PhoundOptions * set_default_opts(){
   char * filters = (char *)malloc(sizeof(char) * MAX_FILTERS);
