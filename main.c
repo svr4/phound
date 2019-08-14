@@ -1,29 +1,46 @@
 #include "lib/headers/phound.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+void * handle_packet(const struct pcap_pkthdr *, const u_char *);
+void packet_implementation(void *, ...);
 
 int main(int argc, char *argv[]){
 
-	/* Get some default options */
-	PhoundOptions * opts = set_default_opts();
-	int success = init(opts);
-	if(success == 0){
-		printf("Success!: %d\n", success);
-	}
-	else{
-		printf("Failed!: %d\n", success);
-	}
-	// Finds the initialized device that's in the list when I call init()
-	// enp3s0
-	Node * n = find_device("en0");
+	PhoundOptions * opts = (PhoundOptions *) malloc(sizeof(PhoundOptions));
+	PacketImplementation * pki = (PacketImplementation *) malloc(sizeof(PacketImplementation));
+	Device * d = (Device *) malloc(sizeof(Device));
 
-	if(n == NULL)
-		printf("Shits null \n");
-	else
-		printf("Found it!\n");
+	d->device_name = "en0";
+	pki->devices = &d;
+	pki->filters = "src net 192.168.1.70";
+	pki->pkti_handle_pkt = handle_packet;
+	pki->pkti_implementation = packet_implementation;
+	
+	opts->impl = &pki;
 
+	phound_init(opts);
 
-	pthread_t t = readFromDevice(n);
+	printf("Hello, Phound!\n");
 
-	while(1);
+	phound_read_from_device();
+
+	sleep(10);
+
+	phound_stop_read_on_device();
+
+	phound_stop();
 
 	return 0;
+}
+
+void * handle_packet(const struct pcap_pkthdr *header, const u_char *packet)
+{
+	printf("Handle packet!");
+	return (void *)packet;
+}
+
+void packet_implementation(void * packet, ...){
+	printf("packet implementation!");
 }
