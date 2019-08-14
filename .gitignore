@@ -1,4 +1,5 @@
-*.out
-*.gdb
-*tmp
 *.o
+lib/*.gch
+*.a
+.vscode
+test
