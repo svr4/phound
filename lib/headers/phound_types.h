@@ -29,6 +29,9 @@ typedef struct packet_impl
     /* List of devices to apply the filter to read on. */
     Device ** devices;
 
+    /* Count of devices */
+    int dev_ctr;
+
     /* Filters that will be applied for the packet implementation. */
     char * filters;
 
@@ -40,6 +43,8 @@ typedef struct phound_opts
 {
     /* List of implementations */
     PacketImplementation ** impl;
+    /* Count of implementations */
+    int implt_ctr;
 
 } PhoundOptions;
 

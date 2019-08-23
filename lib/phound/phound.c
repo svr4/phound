@@ -24,15 +24,19 @@ static void * phound_read_on_thread(void *);
 int phound_init(PhoundOptions * options)
 {
     implementations = options->impl;
+    implementations_ctr = options->implt_ctr;
+
+    if(pcap_device_list == NULL)
+        phound_reload_devices();
 
     if(implementations != NULL)
     {
-        printf("Impl not null %lu!\n", LENGTH(implementations));
+        printf("Impl not null %d!\n", implementations_ctr);
         int i;
         int ii;
         PacketImplementation * pki;
         Device * d;
-        for(i = 0; i < LENGTH(implementations); i++)
+        for(i = 0; i < implementations_ctr; i++)
         {
             printf("Loop impl\n");
             pki = implementations[i];
@@ -50,9 +54,9 @@ int phound_init(PhoundOptions * options)
             else
             {
                 // loop through devices
-                Device ** devices = (Device *) calloc(LENGTH(pki->devices), sizeof(Device *));
+                Device ** devices = (Device *) calloc(pki->dev_ctr, sizeof(Device *));
 
-                for(ii=0; ii < LENGTH(pki->devices); ii++)
+                for(ii=0; ii < pki->dev_ctr; ii++)
                 {
                     printf("Loop devices\n");
                     d = pki->devices[ii];
@@ -80,7 +84,14 @@ int phound_init(PhoundOptions * options)
 int phound_setup_handle(Device * d, PacketImplementation * pki)
 {
     struct bpf_program fp;
-    d->device_name = pcap_lookupdev(errbuff);
+
+    if(d == NULL)
+    {   
+        d = (Device *) malloc(sizeof(Device));
+        d->device_name = (*pcap_device_list)->name;
+    }
+
+    //d->device_name = pcap_lookupdev(errbuff);
     if(d->device_name == NULL)
     {
         fprintf(stderr, "Couldn't get netmask for device %s: %s\n", d->device_name, errbuff);
@@ -122,12 +133,50 @@ int phound_setup_handle(Device * d, PacketImplementation * pki)
 // Reloads the device list of the system
 int phound_reload_devices()
 {
-    return -1;
+    if(pcap_device_list != NULL)
+        free(pcap_device_list);
+    
+    if(pcap_findalldevs(&pcap_device_list, errbuff) != PCAP_ERROR)
+        return 0;
+    else
+        return -1;
 }
-// Returns all connected devices
-pcap_if_t ** phound_connected_devices()
+// Returns the references to devices in pcap_device_list that are connected.
+char ** phound_connected_devices()
 {
+    if(pcap_device_list != NULL)
+    {
+        int i = 0;
+        int ii = 0;
+        char **connected_devices;
+        pcap_if_t *d, *temp;
+        // Linked List
+        temp = pcap_device_list;
+        connected_devices = (char *)calloc(phound_device_count(), sizeof(char *));
+
+        while(temp != NULL)
+        {
+            connected_devices[ii] = temp->name;
+            ii++;
+            temp = temp->next;
+        }
+        
+        return connected_devices;
+    }
     return NULL;
+}
+int phound_device_count()
+{
+    int c = 0;
+    pcap_if_t *temp;
+    // Linked List
+    temp = pcap_device_list;
+    while(temp != NULL)
+    {
+        c++;
+        temp = temp->next;
+    }
+    return c;
 }
 // Sends a function into a new proc to read from device.
 // Puts that thread in a list.
@@ -139,10 +188,10 @@ void phound_read_from_device()
     PacketImplementation * pki;
     PacketImplementationLight * pkil;
     ThreadNode * tn;
-    for(i = 0; i < LENGTH(implementations); i++)
+    for(i = 0; i < implementations_ctr; i++)
     {
         pki = implementations[i];
-        for(ii=0; ii < LENGTH(pki->devices); ii++)
+        for(ii=0; ii < pki->dev_ctr; ii++)
         {
             // Prepare device and callbacks for reading loop
             pkil = (PacketImplementationLight *) malloc(sizeof(PacketImplementationLight));
@@ -224,16 +273,15 @@ int phound_stop()
     int ii;
     PacketImplementation * pki;
     Device * d;
-    for(i = 0; i < LENGTH(implementations); i++)
+    for(i = 0; i < implementations_ctr; i++)
     {
         pki = implementations[i];
 
-        for(ii=0; ii < LENGTH(pki->devices); ii++)
+        for(ii=0; ii < pki->dev_ctr; ii++)
         {
             d = pki->devices[ii];
             if(d != NULL)
             {
-                // printf("Device: %s\n", d->device_name);
                 d->device_name = NULL;
                 free(d->handle);
                 free(d);

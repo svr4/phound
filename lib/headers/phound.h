@@ -27,6 +27,8 @@ static pcap_if_t ** pcap_device_list;
 char errbuff[PCAP_ERRBUF_SIZE];
 //static pthread_t ** reading_threads;
 static PacketImplementation ** implementations;
+/* Count of implementations */
+static int implementations_ctr;
 // Thread random number.
 static int thread_rand_int;
 // Thread name size.
@@ -41,7 +43,9 @@ int phound_init(PhoundOptions *);
 // Reloads the device list of the system
 int phound_reload_devices();
 // Returns all connected devices
-pcap_if_t ** phound_connected_devices();
+char ** phound_connected_devices();
+// Returns the device count.
+int phound_device_count();
 // Sends a function into a new proc to read from device
 void phound_read_from_device();
 // Stops reading on a device
